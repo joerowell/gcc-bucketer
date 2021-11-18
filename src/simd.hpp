@@ -45,11 +45,7 @@ example, before a hadd_epi16 would be:
    Please note that this namespace declares all of the simd functions in this file: all
 implementations are in simd.inl. To prevent the compiler from complaining about definitions (e.g
 needing to instantiate AVX2 intrinsics when AVX2 isn't a flag that is set) we use an ifdef guard to
-block these off: if AVX2 isn't allowed we simply assert(false) on those calls.
-
-   Implementor's note: to get this component to work properly you'll need to compile G6K with
--flax-vector-conversions. This is because __m256i is inherently untyped and flexible, but the GCC
-vectors are typed and so they have to be able to freely mix.
+block off calls to AVX2 intrinsics if HAVE_AVX2 is not defined. 
 **/
 
 namespace Simd

@@ -473,7 +473,7 @@ inline void Simd::m256_permute_epi16<2>(VecType *const v, SmallVecType &prg_stat
   // so we also choose at random among a few precomputed permutation to apply on
   // the first register
 
-  uint32_t x  = _mm_extract_epi64(prg_state, 0);
+  uint32_t x  = m128_extract_epi64<0>(prg_state);
   uint32_t x1 = (x >> 16) & 0x03;
   uint32_t x2 = x & 0x03;
 
