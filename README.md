@@ -7,7 +7,7 @@ GCC's vector intrinsics as opposed to Intel's vector intrinsics. This allows the
 This repository belongs to a much larger research project into lattice sieving across multiple platforms.
 
 ## Acknowledgements
-The code in this repository was initially taken from [AVX2 Bucketer](https://github.com/lducas/AVX2-BDGL-bucketer), and all of the really good ideas from this work come from that repository. We are deeply grateful to the authors of that project for sharing their code with us at an early stage.
+The code in this repository was initially taken from [AVX2 Bucketer](https://github.com/lducas/AVX2-BDGL-bucketer), and all of the really good ideas from this work come from that repository (i.e the use of the Hadamard transform for BDGL bucketing, the actual algorithms and all of the good insights). We are deeply grateful to the authors of that project for sharing their code with us at an early stage.
 
 ## How to use:
 We refer the reader to the excellent readme at [AVX2 Bucketer](https://github.com/lducas/AVX2-BDGL-bucketer) for a description of the interface to the bucketer itself. Here we simply describe the added interface as part of this project.
