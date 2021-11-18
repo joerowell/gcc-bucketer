@@ -15,8 +15,10 @@ include_directories(SYSTEM ${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 # ##############################################################################
 # Find benchmark
 # ##############################################################################
-# We need GoogleBenchmark.
-find_package(benchmark REQUIRED)
+# We need GoogleBenchmark in most circumstances. For CI we turn this off. Uncomment it
+# if you want microbenchmarks.
+
+#find_package(benchmark REQUIRED)
 
 # ##############################################################################
 # Unit Tests
@@ -103,7 +105,7 @@ add_test(SimdIntelTests SimdIntelTests)
 # NOTE: This is commented out because installing Google benchmark is confusing for GH actions.
 # To enable these, remove the # [[ blocks 
 
-# [[
+#[[
 set(G_C_FLAGS_BENCH
     "-Ofast -flax-vector-conversions -march=native -mtune=native -ftree-vectorize")
   
