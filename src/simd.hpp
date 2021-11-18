@@ -175,7 +175,7 @@ inline VecType build_vec_type(const int16_t *const in)
 {
 #ifdef HAVE_AVX2
   // Just use the regular m256 load.
-  return _mm256_loadu_si256((__m256i *)in);
+  return _mm256_loadu_si256(reinterpret_cast<const __m256i *>(in));
 #else
   // Delegate to the dedicated routine.
   return build_vec16s(in);

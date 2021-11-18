@@ -167,7 +167,7 @@ template <uint8_t mask> inline Simd::VecType Simd::m256_permute4x64_epi64(const 
   // it's probably not worth it: this is just a general function.
 
   constexpr Vec4q temp_mask{mask & 3, (mask & 12) >> 2, (mask & 48) >> 4, (mask & 192) >> 6};
-  return static_cast<Vec16s>(__builtin_shuffle(static_cast<Vec4q>(a), temp_mask));
+  return reinterpret_cast<Vec16s>(__builtin_shuffle(reinterpret_cast<Vec4q>(a), temp_mask));
 #endif
 }
 
@@ -182,8 +182,8 @@ inline Simd::VecType Simd::m256_permute4x64_epi64_for_hadamard(const VecType a)
   // version for the general shuffle doesn't need to be backwards.
   // My guess is that it's to do with the endianness of `a` but I've
   // got no idea beyond that.
-  static constexpr Vec4q mask{arr[3], arr[2], arr[1], arr[0]};
-  return static_cast<Vec16s>(__builtin_shuffle(static_cast<Vec4q>(a), mask));
+  constexpr Vec4q mask{arr[3], arr[2], arr[1], arr[0]};
+  return reinterpret_cast<Vec16s>(__builtin_shuffle(reinterpret_cast<Vec4q>(a), mask));
 #endif
 }
 
@@ -336,11 +336,11 @@ inline Simd::SmallVecType Simd::m128_shuffle_epi8(const SmallVecType in, const S
   // Aha! Gotcha.
   // It turns out the mm_shuffle_epi8 intrinsic is a bit weird.
   // Essentially, if the top-most bit of `mask[i]` is set then `out[i] == 0`.
-  const auto gt_64 = (Vec16uc)mask & 0x80;
+  const auto gt_64 = reinterpret_cast<Vec16uc>(mask) & 0x80;
 
   // And now if the element is > 64 we choose 0, otherwise we choose the shuffled version
   const auto result = gt_64 ? 0 : intermediate;
-  return result;
+  return reinterpret_cast<SmallVecType>(result);
 #endif
 }
 
@@ -366,8 +366,8 @@ inline Simd::VecType Simd::m256_shuffle_epi8(const VecType in, const VecType mas
   memcpy(&last_mask, &mask[8], sizeof(Vec8s));
 
   // Delegate to the 128-bit version.
-  auto res_1 = Simd::m128_shuffle_epi8(first, first_mask);
-  auto res_2 = Simd::m128_shuffle_epi8(last, last_mask);
+  auto res_1 = Simd::m128_shuffle_epi8(first, reinterpret_cast<SmallVecType>(first_mask));
+  auto res_2 = Simd::m128_shuffle_epi8(last, reinterpret_cast<SmallVecType>(last_mask));
 
   // Same caveat as above.
   memcpy(&result, &res_1, sizeof(Vec8s));
@@ -383,18 +383,17 @@ inline void Simd::m256_hadamard16_epi16(const VecType x1, VecType &r1)
 
   // From here we go back to treating x1 as a 16x16 vector.
   // Negate the first 8 of the elements in the vector
-
-  auto t1 = m256_sign_epi16(x1, sign_mask_8);
+  auto t1 = m256_sign_epi16(x1, reinterpret_cast<VecType>(sign_mask_8));
 
   // Add the permutation to the recently negated portion & apply the second sign mask.
   // (BTW the Wikipedia page for the Hadamard transform is really useful for understanding what's
   // going on here!)
   a1      = m256_add_epi16(a1, t1);
-  auto b1 = m256_sign_epi16(a1, sign_mask_2);
+  auto b1 = m256_sign_epi16(a1, reinterpret_cast<VecType>(sign_mask_2));
   a1      = m256_hadd_epi16(a1, b1);
-  b1      = m256_sign_epi16(a1, sign_mask_2);
+  b1      = m256_sign_epi16(a1, reinterpret_cast<VecType>(sign_mask_2));
   a1      = m256_hadd_epi16(a1, b1);
-  b1      = m256_sign_epi16(a1, sign_mask_2);
+  b1      = m256_sign_epi16(a1, reinterpret_cast<VecType>(sign_mask_2));
   r1      = m256_hadd_epi16(a1, b1);
 }
 
@@ -404,24 +403,24 @@ inline void Simd::m256_hadamard32_epi16(const VecType x1, const VecType x2, VecT
   auto a1 = m256_permute4x64_epi64_for_hadamard(x1);
   auto a2 = m256_permute4x64_epi64_for_hadamard(x2);
 
-  auto t1 = m256_sign_epi16(x1, sign_mask_8);
-  auto t2 = m256_sign_epi16(x2, sign_mask_8);
+  auto t1 = m256_sign_epi16(x1, reinterpret_cast<VecType>(sign_mask_8));
+  auto t2 = m256_sign_epi16(x2, reinterpret_cast<VecType>(sign_mask_8));
 
   a1 = m256_add_epi16(a1, t1);
   a2 = m256_add_epi16(a2, t2);
 
-  auto b1 = m256_sign_epi16(a1, sign_mask_2);
-  auto b2 = m256_sign_epi16(a2, sign_mask_2);
+  auto b1 = m256_sign_epi16(a1, reinterpret_cast<VecType>(sign_mask_2));
+  auto b2 = m256_sign_epi16(a2, reinterpret_cast<VecType>(sign_mask_2));
 
   // Now apply the 16-bit Hadamard transforms and repeat the process
   a1 = m256_hadd_epi16(a1, b1);
   a2 = m256_hadd_epi16(a2, b2);
-  b1 = m256_sign_epi16(a1, sign_mask_2);
-  b2 = m256_sign_epi16(a2, sign_mask_2);
+  b1 = m256_sign_epi16(a1, reinterpret_cast<VecType>(sign_mask_2));
+  b2 = m256_sign_epi16(a2, reinterpret_cast<VecType>(sign_mask_2));
   a1 = m256_hadd_epi16(a1, b1);
   a2 = m256_hadd_epi16(a2, b2);
-  b1 = m256_sign_epi16(a1, sign_mask_2);
-  b2 = m256_sign_epi16(a2, sign_mask_2);
+  b1 = m256_sign_epi16(a1, reinterpret_cast<VecType>(sign_mask_2));
+  b2 = m256_sign_epi16(a2, reinterpret_cast<VecType>(sign_mask_2));
   a1 = m256_hadd_epi16(a1, b1);
   a2 = m256_hadd_epi16(a2, b2);
 
@@ -479,12 +478,12 @@ inline void Simd::m256_permute_epi16<2>(VecType *const v, SmallVecType &prg_stat
   uint32_t x2 = x & 0x03;
 
   // Apply the precomputed permutations to the input vector
-  v[0] = m256_shuffle_epi8(v[0], permutations_epi16[x1]);
+  v[0] = m256_shuffle_epi8(v[0], reinterpret_cast<VecType>(permutations_epi16[x1]));
   m256_mix(v[0], v[1], tailmask);
   v[0] = m256_permute4x64_epi64<0b10010011>(v[0]);
-  v[0] = m256_shuffle_epi8(v[0], permutations_epi16[x2]);
+  v[0] = m256_shuffle_epi8(v[0], reinterpret_cast<VecType>(permutations_epi16[x2]));
 
-  mask = m256_cmpgt_epi16(rnd, mixmask_threshold);
+  mask = m256_cmpgt_epi16(rnd, reinterpret_cast<VecType>(mixmask_threshold));
   mask = m256_and_si256(mask, tailmask);
   m256_mix(v[0], v[1], mask);
 
@@ -513,17 +512,17 @@ inline void Simd::m256_permute_epi16(VecType *const v, SmallVecType &prg_state,
     // shuffle 8 bit parts in each 128 bit lane
     // Note - the exact semantics of what this function does are a bit confusing.
     // See the Intel intrinsics guide if you're curious
-    v[2 * i] = m256_shuffle_epi8(v[2 * i], permutations_epi16[i % 3]);
+    v[2 * i] = m256_shuffle_epi8(v[2 * i], reinterpret_cast<VecType>(permutations_epi16[i % 3]));
     // For the odd positions we permute each 64-bit chunk according to the mask.
     v[2 * i + 1] = m256_permute4x64_epi64<0b10010011>(v[2 * i + 1]);
   }
 
   // Now we negate the first two vectors according to the negation masks
-  v[0] = m256_sign_epi16(v[0], negation_masks_epi16[0]);
-  v[1] = m256_sign_epi16(v[1], negation_masks_epi16[1]);
+  v[0] = m256_sign_epi16(v[0], reinterpret_cast<VecType>(negation_masks_epi16[0]));
+  v[1] = m256_sign_epi16(v[1], reinterpret_cast<VecType>(negation_masks_epi16[1]));
 
   // swap int16 entries of v[0] and v[1] where rnd > threshold
-  tmp = m256_cmpgt_epi16(rnd, mixmask_threshold);
+  tmp = m256_cmpgt_epi16(rnd, reinterpret_cast<VecType>(mixmask_threshold));
   m256_mix(v[0], v[1], tmp);
   // Shift the randomness around before extracting more (somewhat independent) mixing bits
   rnd = m256_slli_epi16(rnd, 1);
@@ -539,10 +538,10 @@ inline void Simd::m256_permute_epi16(VecType *const v, SmallVecType &prg_state,
   for (int i = 2; i + 2 < regs_; i += 2)
   {
     rnd = m256_slli_epi16(rnd, 1);
-    tmp = m256_cmpgt_epi16(rnd, mixmask_threshold);
+    tmp = m256_cmpgt_epi16(rnd, reinterpret_cast<VecType>(mixmask_threshold));
     m256_mix(v[0], v[i], tmp);
     rnd = m256_slli_epi16(rnd, 1);
-    tmp = m256_cmpgt_epi16(rnd, mixmask_threshold);
+    tmp = m256_cmpgt_epi16(rnd, reinterpret_cast<VecType>(mixmask_threshold));
     m256_mix(v[1], v[i + 1], tmp);
   }
 

@@ -188,7 +188,7 @@ TEST_F(SimdFixture, testExtractEpi64Small)
   memcpy(&cp, &a, sizeof(cp));
   memcpy(&v_cp, &am, sizeof(v_cp));
 
-  auto c1 = Simd::m128_extract_epi64<pos>(cp);
+  auto c1 = Simd::m128_extract_epi64<pos>(reinterpret_cast<Simd::SmallVecType>(cp));
   auto c2 = _mm_extract_epi64(v_cp, pos);
   EXPECT_EQ(memcmp(&c1, &c2, sizeof(c1)), 0);
 }
@@ -295,7 +295,7 @@ TEST_F(SimdFixture, testBroadcastSi128Si256)
   // No importance on the bounds
   random_vec(m_broadcast, broadcast, 0, 100);
 
-  auto c1 = Simd::m256_broadcastsi128_si256(broadcast);
+  auto c1 = Simd::m256_broadcastsi128_si256(reinterpret_cast<Simd::SmallVecType>(broadcast));
   auto c2 = _mm256_broadcastsi128_si256(m_broadcast);
   EXPECT_EQ(memcmp(&c1, &c2, sizeof(VecType)), 0);
 }
@@ -345,6 +345,8 @@ TEST_F(SimdFixture, testM128iShuffleEpi8)
   // The entries don't really matter.
   __m128i m_mask;
   Simd::Vec8s mask;
+  static_assert(sizeof(Simd::Vec8s) == sizeof(m_mask), "Error: Vec8s is too big!");
+  
   random_vec(m_mask, mask, -100, 100);
 
   // Need to generate random non-mask vectors too
@@ -353,7 +355,7 @@ TEST_F(SimdFixture, testM128iShuffleEpi8)
   random_vec(m_actual, actual, -100, 100);
 
   // Now check the shuffling
-  auto c1 = Simd::m128_shuffle_epi8(actual, (Simd::Vec16c)mask);
+  auto c1 = Simd::m128_shuffle_epi8(reinterpret_cast<Simd::SmallVecType>(actual), reinterpret_cast<Simd::SmallVecType>(mask));
   auto c2 = _mm_shuffle_epi8(m_actual, m_mask);
   EXPECT_EQ(memcmp(&c1, &c2, sizeof(Simd::Vec16c)), 0);
 }
@@ -367,7 +369,7 @@ TEST_F(SimdFixture, testM256iShuffleEpi8)
   random_vec(m_mask, mask, -100, 100);
 
   // Now check the shuffling
-  auto c1 = Simd::m256_shuffle_epi8(a, (Simd::Vec32c)mask);
+  auto c1 = Simd::m256_shuffle_epi8(a, reinterpret_cast<Simd::VecType>(mask));
   auto c2 = _mm256_shuffle_epi8(am, m_mask);
   EXPECT_EQ(memcmp(&c1, &c2, sizeof(VecType)), 0);
 }
@@ -413,7 +415,7 @@ TEST_F(SimdFixture, testM256Permute2Regs)
   // The exact tail mask doesn't matter
   FastHadamardLSH::m256_permute_epi16<2>(&m_vecs[0], m_prg_state, tailmasks[0], m_key,
                                          &m_extra_state);
-  Simd::m256_permute_epi16<2>(&vecs[0], prg_state, Simd::tailmasks[0], key, &extra_state);
+  Simd::m256_permute_epi16<2>(&vecs[0], prg_state, reinterpret_cast<Simd::VecType>(Simd::tailmasks[0]), key, &extra_state);
 
   // And finally, compare that the vectors are the same.
   EXPECT_EQ(memcmp(&vecs[0], &m_vecs[0], sizeof(vecs)), 0);
@@ -441,7 +443,7 @@ TEST_F(SimdFixture, testM256PermuteNRegs)
     ASSERT_EQ(memcmp(&vecs[0], &m_vecs[0], sizeof(vecs)), 0);                                      \
     FastHadamardLSH::m256_permute_epi16<n>(&m_vecs[0], m_prg_state, tailmasks[n], m_key,           \
                                            &m_extra_state);                                        \
-    Simd::m256_permute_epi16<n>(&vecs[0], prg_state, Simd::tailmasks[n], key, &extra_state);       \
+    Simd::m256_permute_epi16<n>(&vecs[0], prg_state, reinterpret_cast<Simd::VecType>(Simd::tailmasks[n]), key, &extra_state); \
     EXPECT_EQ(memcmp(&vecs[0], &m_vecs[0], sizeof(vecs)), 0);                                      \
   }
 
