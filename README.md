@@ -7,7 +7,7 @@ GCC's vector intrinsics as opposed to Intel's vector intrinsics. This allows the
 This repository belongs to a much larger research project into lattice sieving across multiple platforms.
 
 ## Acknowledgements
-The code in this repository was initially taken from [AVX2 Bucketer](https://github.com/lducas/AVX2-BDGL-bucketer), and all of the really good ideas from this work come from that repository. We are deeply grateful to the authors of that project for sharing their code with us at an early stage.
+The code in this repository was initially taken from [AVX2 Bucketer](https://github.com/lducas/AVX2-BDGL-bucketer), and all of the really good ideas from this work come from that repository (i.e the use of the Hadamard transform for BDGL bucketing, the actual algorithms and all of the good insights). We are deeply grateful to the authors of that project for sharing their code with us at an early stage.
 
 ## How to use:
 We refer the reader to the excellent readme at [AVX2 Bucketer](https://github.com/lducas/AVX2-BDGL-bucketer) for a description of the interface to the bucketer itself. Here we simply describe the added interface as part of this project.
@@ -19,9 +19,20 @@ As GCC is likely to generate poor object code (compared to hand-written intrinsi
 ## How to test:
 This repository contains a series of test suites. Note that in order to run these tests you will need both ```CMAKE``` and ```googleTest```.
 
-- Unit tests are provided in src/simd.t.cpp 
+
+### Building tests:
+```
+mkdir build
+cd build
+cmake ../
+make
+```
+
+This will produce a series of files that can be used for running tests.
+
+- Unit tests are provided in ```src/simd.t.cpp```. 
 - If you want to test the GCC vectors, run SimdGCCTests. If you want to use AVX2, run SimdIntelTests.
-- Minimal microbenchmarks are provided in ```src/simd.b.cpp```. Running these requires the use of ```google benchmark```.
+- Minimal microbenchmarks are provided in ```src/simd.b.cpp```. Running these requires the use of ```google benchmark```. Assuming you have ```google benchmark``` you can run the code by executing the ```SimdBench``` program.
 - You can also use the ```test_lsh``` files for various statistics and dimensions. Again, the original code comes from the AVX2 Bucketer.
 
 
