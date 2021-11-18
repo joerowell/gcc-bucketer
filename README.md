@@ -19,9 +19,20 @@ As GCC is likely to generate poor object code (compared to hand-written intrinsi
 ## How to test:
 This repository contains a series of test suites. Note that in order to run these tests you will need both ```CMAKE``` and ```googleTest```.
 
-- Unit tests are provided in src/simd.t.cpp 
+
+### Building tests:
+```
+mkdir build
+cd build
+cmake ../
+make
+```
+
+This will produce a series of files that can be used for running tests.
+
+- Unit tests are provided in src/simd.t.cpp. 
 - If you want to test the GCC vectors, run SimdGCCTests. If you want to use AVX2, run SimdIntelTests.
-- Minimal microbenchmarks are provided in ```src/simd.b.cpp```. Running these requires the use of ```google benchmark```.
+- Minimal microbenchmarks are provided in ```src/simd.b.cpp```. Running these requires the use of ```google benchmark```. Assuming you have ```google benchmark``` you can run the code by executing the ```SimdBench``` program.
 - You can also use the ```test_lsh``` files for various statistics and dimensions. Again, the original code comes from the AVX2 Bucketer.
 
 
