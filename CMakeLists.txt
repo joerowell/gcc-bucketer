@@ -69,10 +69,9 @@ list(JOIN COVERAGE " " COVERAGE)
 
 # Global settings for great good The definition for G_C_FLAGS expands the
 # warnings and coverage arguments from above.
-# NB march=native is so we can get rdtsc + the AVX2 instructions for the BDGL bucketer.
 
-set(G_C_FLAGS "-g3 -march=native -flax-vector-conversions -fsanitize=address,leak,undefined" "${G_C_FLAGS}" "${WARNINGS}" "${COVERAGE}")
-set(G_L_FLAGS "gtest gtest_main gcov asan lsan ubsan")
+set(G_C_FLAGS "-g3 -march=native -flax-vector-conversions " "${G_C_FLAGS}" "${WARNINGS}" "${COVERAGE}")
+set(G_L_FLAGS "gtest gtest_main gcov")
 set(G_C_OPT_FLAGS "-Ofast -march=native -mtune=native -flto -ftree-vectorize")
 
 # This splits them up into a form that CMAKE can deal with when passing to
