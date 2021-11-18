@@ -1,5 +1,9 @@
 #include "fht_lsh.h"
 
+// Please note that this file originally came from:
+// https://github.com/lducas/AVX2-BDGL-bucketer commit 630c2286a440fae1eddd9f90341ff2020f18b614
+// This has since been modified. 
+
 // insert_in_maxs. Given a hash value val, insert it into maxs along with its index.
 inline void FastHadamardLSH::insert_in_maxs(int32_t * const maxs, const int16_t val, const int32_t index)
 {
