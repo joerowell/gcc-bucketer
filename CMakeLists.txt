@@ -98,9 +98,12 @@ add_test(SimdIntelTests SimdIntelTests)
 # To begin, we use different compile flags. You won't want to run these
 # benchmarks with assertions: what you *really* want to do is write benchmarks
 # that show how fast the code will be in release mode.
-
 # WARNING: funroll-loops seems to screw with Google benchmark. Leave it out for better results.
 
+# NOTE: This is commented out because installing Google benchmark is confusing for GH actions.
+# To enable these, remove the # [[ blocks 
+
+# [[
 set(G_C_FLAGS_BENCH
     "-Ofast -flax-vector-conversions -march=native -mtune=native -ftree-vectorize")
   
@@ -130,3 +133,4 @@ add_executable(BucketerBenchGCC src/test_lsh_gcc.cpp src/fht_lsh.cpp)
 target_compile_options(BucketerBenchGCC PRIVATE ${C_FLAGS_BENCH})
 target_link_libraries(BucketerBenchGCC PRIVATE ${L_FLAGS_BENCH})
 set_target_properties(BucketerBenchGCC PROPERTIES CXX_STANDARD 17)
+#]]
