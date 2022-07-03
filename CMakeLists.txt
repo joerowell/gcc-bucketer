@@ -24,10 +24,7 @@ include_directories(SYSTEM ${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 # Unit Tests
 # ##############################################################################
 
-# This is the list of sanitisers we use Each option will have its own
-# corresponding binaries produced
-# NB Asan also includes Tsan etc. 
-set(Sanitisers Asan)
+set(LIB_ASAN -fno-omit-frame-pointer -fsanitize=address)
 #Tsan)
 
 # Reason for placing these here: easier removal from the flags if you can just
@@ -56,7 +53,7 @@ set(WARNINGS
     # -Wmismatched-tags
 )
 
-set(COVERAGE -fprofile-arcs -ftest-coverage)
+set(COVERAGE)# -fprofile-arcs -ftest-coverage)
 
 #[[
   Because we've listed these arguments as separate elements in a list, we need to concatenate
@@ -72,8 +69,8 @@ list(JOIN COVERAGE " " COVERAGE)
 # Global settings for great good The definition for G_C_FLAGS expands the
 # warnings and coverage arguments from above.
 
-set(G_C_FLAGS "-g3 -march=native -flax-vector-conversions " "${G_C_FLAGS}" "${WARNINGS}" "${COVERAGE}")
-set(G_L_FLAGS "gtest gtest_main gcov")
+set(G_C_FLAGS "-g3 -march=native -flax-vector-conversions " "${G_C_FLAGS}" "${WARNINGS}" "${LIB_ASAN}" "${COVERAGE}")
+set(G_L_FLAGS "gtest gtest_main" "${LIB_ASAN}")
 set(G_C_OPT_FLAGS "-Ofast -march=native -mtune=native -flto -ftree-vectorize")
 
 # This splits them up into a form that CMAKE can deal with when passing to
@@ -92,6 +89,13 @@ target_compile_options(SimdIntelTests PRIVATE ${C_FLAGS})
 target_link_libraries(SimdIntelTests PRIVATE ${L_FLAGS})
 set_target_properties(SimdIntelTests PROPERTIES CXX_STANDARD 17)
 add_test(SimdIntelTests SimdIntelTests)
+
+add_executable(SimdGenericTests src/simd_generic.t.cpp src/simd_generic.cpp)
+target_compile_options(SimdGenericTests PRIVATE ${C_FLAGS})
+target_link_libraries(SimdGenericTests PRIVATE ${L_FLAGS})
+set_target_properties(SimdGenericTests PROPERTIES CXX_STANDARD 17)
+add_test(SimdGenericTests SimdGenericTests)
+
 
 # ##############################################################################
 # Benchmarking

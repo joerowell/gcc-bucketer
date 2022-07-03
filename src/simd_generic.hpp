@@ -1,54 +1,20 @@
-#ifndef G6K_SIMD_H
-#define G6K_SIMD_H
-
+#ifndef INCLUDED_SIMD_GENERIC
+#define INCLUDED_SIMD_GENERIC
+#include <array>
 #include <cstdint>
-#include <immintrin.h>
 #include <iostream>
 
 /**
-   Simd. This namespace provides access to a variety of low-level SIMD routines for operating on
-vectors of fixed width. The raison d'etre for this namespace is to provide an alternative way to do
-SIMD compared to relying on native machine intrinsics.
+ * SimdGeneric. This namespace provides generic implementations of the
+ * simd functions provided in simd.hpp. This namespace should primarily be used
+ * for comparing the simd functions against their intended behaviour on different platforms,
+ * as the behaviour may vary.
+ *
+ * Please note that testing this namespace must be done on x86-64 machines, as we compare directly
+ * against the Intel intrinsics.
+ **/
 
-   Put briefly, the original BDGL bucketer used in G6K relies exclusively on AVX2 instructions.
-Whilst AVX2 is over 8 years old (at the time of writing) this ties the use of BDGL in G6K to
-machines with AVX2, and in a world where ARM is becoming more popular (to say nothing of older
-machine clusters) this limitation is a little bit annoying.
-
-   To circumvent this problem, this namespace provides some useful wrapper functions for accessing
-SIMD functionality across a variety of vector types. In particular, this namespace provides wrapper
-functions that operate on:
-
-   - __m256i. This is the native AVX(2) 256-bit integer vector. This should be preferred in
-situations where AVX2 is available. This is because GCC does not always optimise as well as
-hand-written intrinsics do: the generic version is between 1x-5x slower (and it is never faster than
-the native version).
-   - Vec16s. This is an emulated vector type that we define. We define this type using GCC's vector
-extensions. In other words, we move from relying on a particular instruction set (e.g AVX2) to a
-particular compiler (e.g GCC). This doesn't really lose us anything, as G6K already relies on GCC
-builtins for certain high-performance operations.
-
-   The preferred way to use this namespace is as follows. The namespace will, at compile-time,
-choose the right vector type that is to be used. This will be exposed to the outside world as
-`Simd::VecType` (there's also a small type called `Simd::SmallVecType`. Any time you want to use a
-vector (called vec), you should then  write `Simd::VecType vec;`. If you want to do an operation on
-a vector, you should then call the functions provided by the Simd namespace: because C++ allows
-ad-hoc polymorphism, the compiler will automatically delegate to the right routines.
-
-   This does mean that the code in the bucketer starts sporting `auto` more often than before. For
-example, before a hadd_epi16 would be:
-   `` __m256i res = _mm256_hadd_epi16(a,b); ``
-   Whereas now you should write:
-
-   ``auto res = Simd::m256_hadd_epi16(a,b);``
-
-   Please note that this namespace declares all of the simd functions in this file: all
-implementations are in simd.inl. To prevent the compiler from complaining about definitions (e.g
-needing to instantiate AVX2 intrinsics when AVX2 isn't a flag that is set) we use an ifdef guard to
-block off calls to AVX2 intrinsics if HAVE_AVX2 is not defined.
-**/
-
-namespace Simd
+namespace SimdGeneric
 {
 // Naming convention for vectors here is: Vec_(number_of_elements)_(first letter of type).
 // So, for example, a vector with 8 shorts in it is written as Vec8s.
@@ -59,71 +25,63 @@ namespace Simd
    Vec16s. This vector contains 16 shorts (i.e 16 * 16 bits). It is 256-bits in size.
    Note that this type is 16-byte aligned.
  **/
-using Vec16s = int16_t __attribute__((vector_size(sizeof(int16_t) * 16), aligned(16)));
-
+using Vec16s = std::array<int16_t, 16>;
 /**
    Vec4q. This vector contains 4 quadwords (i.e 4 * 64 bits). It is 256-bits in size and
    16-byte aligned.
 **/
-using Vec4q = int64_t __attribute__((vector_size(sizeof(int64_t) * 4), aligned(16)));
+using Vec4q = std::array<int64_t, 4>;
 
 /**
-     Vec4uq. This vector contains 4 unsigned quadwords (i.e 4 * 64 bits). It is 256-bits in size and
-16-byte aligned.
+   Vec4uq. This vector contains 4 unsigned quadwords (i.e 4 * 64 bits). It is 256-bits in size and
+   16-byte aligned.
 **/
-using Vec4uq = uint64_t __attribute__((vector_size(sizeof(uint64_t) * 4), aligned(16)));
+using Vec4uq = std::array<uint64_t, 16>;
 
 /**
    Vec2q. This vector contains 2 quadwords (i.e 2 * 64 bits). It is 128-bits in size
    and 16-byte aligned.
 **/
-using Vec2q = int64_t __attribute__((vector_size(sizeof(int64_t) * 2), aligned(16)));
+using Vec2q = std::array<int64_t, 2>;
 
 /**
    Vec2uq. This vector contains 2 unsigned quadwords (i.e 2 * 64 bits). It is 128-bits in size
    and 16-byte aligned.
 **/
-using Vec2uq = uint64_t __attribute__((vector_size(sizeof(uint64_t) * 2), aligned(16)));
+using Vec2uq = std::array<int64_t, 2>;
 
 /**
    Vec8s. This vector contains 8 shorts (i.e 8 * 16 bits). It is 128-bits in size and 16-byte
 aligned.
 **/
-using Vec8s = int16_t __attribute__((vector_size(sizeof(int16_t) * 8), aligned(16)));
+using Vec8s = std::array<int16_t, 8>;
 
 /**
    Vec8d. This vector contains 8 doublewords (i.e 8 * 32bits). It is 256-bits in size and 16-byte
-aligned.
+   aligned.
 **/
-using Vec8d = int32_t __attribute__((vector_size(sizeof(int32_t) * 8), aligned(16)));
+using Vec8d = std::array<int32_t, 8>;
 
 /**
    Vec32c. This vector contains 32 chars (i.e 32 * 8 bits). It is 256-bits in size and 16-byte
-aligned.
+   aligned.
 **/
-using Vec32c = int8_t __attribute__((vector_size(sizeof(int8_t) * 32), aligned(16)));
+using Vec32c = std::array<int8_t, 32>;
 
 /**
    Vec16c. This vector contains 16 chars (i.e 16 * 8 bits). It is 128-bits in size and 16-byte
-aligned.
+   aligned.
 **/
-using Vec16c = int8_t __attribute__((vector_size(sizeof(int8_t) * 16), aligned(16)));
+using Vec16c = std::array<int8_t, 16>;
+
 /**
    Vec16uc. This vector contains 16 unsigned chars (i.e 16 * 8 bits). It is 128-bits in size and
 16-byte aligned.
 **/
-using Vec16uc = uint8_t __attribute__((vector_size(sizeof(uint8_t) * 16), aligned(16)));
+using Vec16uc = std::array<uint8_t, 16>;
 
-// We'll now expose the type we're actually using. This is solely dependent on the
-// HAVE_AVX2 flag, which is set (or not) when autotools is invoked.
-
-#ifdef HAVE_AVX2
-using VecType      = __m256i;
-using SmallVecType = __m128i;
-#else
 using VecType      = Vec16s;
 using SmallVecType = Vec8s;
-#endif
 
 // Generic constructors for the Vector Types.
 // NOTE: Vec16s's constructor takes the input array and reverses it.
@@ -169,13 +127,8 @@ constexpr Vec8d build_vec8d(int32_t e7, int32_t e6, int32_t e5, int32_t e4, int3
 
 inline VecType build_vec_type(const int16_t *const in)
 {
-#ifdef HAVE_AVX2
-  // Just use the regular m256 load.
-  return _mm256_loadu_si256(reinterpret_cast<const __m256i *>(in));
-#else
   // Delegate to the dedicated routine.
   return build_vec16s(in);
-#endif
 }
 
 inline VecType build_vec_type(const int16_t in)
@@ -187,113 +140,6 @@ inline VecType build_vec_type(const int16_t in)
 #endif
 }
 
-// Masks for various operations.
-// We only compile the ones we'll use.
-
-#ifdef COMPILE_AVX2
-constexpr __m256i mixmask_threshold =
-    _mm256_set_epi16(0x5555, 0x5555, 0x5555, 0x5555, 0x5555, 0x5555, 0x5555, 0x5555, 0xAAAA, 0xAAAA,
-                     0xAAAA, 0xAAAA, 0xAAAA, 0xAAAA, 0xAAAA, 0xAAAA);
-
-constexpr __m256i _7FFF_epi16 =
-    _mm256_set_epi16(0x7FFF, 0x7FFF, 0x7FFF, 0x7FFF, 0x7FFF, 0x7FFF, 0x7FFF, 0x7FFF, 0x7FFF, 0x7FFF,
-                     0x7FFF, 0x7FFF, 0x7FFF, 0x7FFF, 0x7FFF, 0x7FFF);
-
-constexpr __m256i sign_mask_2 =
-    _mm256_set_epi16(0xFFFF, 0x0001, 0xFFFF, 0x0001, 0xFFFF, 0x0001, 0xFFFF, 0x0001, 0xFFFF, 0x0001,
-                     0xFFFF, 0x0001, 0xFFFF, 0x0001, 0xFFFF, 0x0001);
-
-constexpr __m256i mask_even_epi16 =
-    _mm256_set_epi16(0xFFFF, 0x0000, 0xFFFF, 0x0000, 0xFFFF, 0x0000, 0xFFFF, 0x0000, 0xFFFF, 0x0000,
-                     0xFFFF, 0x0000, 0xFFFF, 0x0000, 0xFFFF, 0x0000);
-
-constexpr __m256i mask_odd_epi16 =
-    _mm256_set_epi16(0x0000, 0xFFFF, 0x0000, 0xFFFF, 0x0000, 0xFFFF, 0x0000, 0xFFFF, 0x0000, 0xFFFF,
-                     0x0000, 0xFFFF, 0x0000, 0xFFFF, 0x0000, 0xFFFF);
-
-constexpr __m256i regroup_for_max = _mm256_set_epi8(
-    0x0F, 0x0E, 0x07, 0x06, 0x0D, 0x0C, 0x05, 0x04, 0x0B, 0x0A, 0x03, 0x02, 0x09, 0x08, 0x01, 0x00,
-    0x1F, 0x1E, 0x17, 0x16, 0x1D, 0x1C, 0x15, 0x14, 0x1B, 0x1A, 0x13, 0x12, 0x19, 0x18, 0x11, 0x10);
-
-constexpr __m256i sign_mask_8 =
-    _mm256_set_epi16(0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0x0001, 0x0001,
-                     0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001);
-
-constexpr __m256i sign_shuffle =
-    _mm256_set_epi16(0xFFFF, 0xFFFF, 0xFFFF, 0x0001, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0x0001, 0x0001,
-                     0x0001, 0x0001, 0x0001, 0x0001, 0xFFFF, 0xFFFF);
-
-constexpr __m256i indices_epi8 = _mm256_set_epi8(
-    0x0F, 0x0E, 0x0D, 0x0C, 0x0B, 0x0A, 0x09, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00,
-    0x1F, 0x1E, 0x1D, 0x1C, 0x1B, 0x1A, 0x19, 0x18, 0x17, 0x16, 0x15, 0x14, 0x13, 0x12, 0x11, 0x10);
-
-constexpr __m256i indices_epi16 =
-    _mm256_set_epi16(0x000F, 0x000E, 0x000D, 0x000C, 0x000B, 0x000A, 0x0009, 0x0008, 0x0007, 0x0006,
-                     0x0005, 0x0004, 0x0003, 0x0002, 0x0001, 0x0000);
-
-constexpr __m256i indices_sa1_epi16 =
-    _mm256_set_epi16(0x0010, 0x000F, 0x000E, 0x000D, 0x000C, 0x000B, 0x000A, 0x0009, 0x0008, 0x0007,
-                     0x0006, 0x0005, 0x0004, 0x0003, 0x0002, 0x0001);
-
-constexpr __m256i _0010_epi16 =
-    _mm256_set_epi16(0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010,
-                     0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010);
-
-constexpr __m256i rnd_mult_epi32 = _mm256_set_epi32(0xF010A011, 0x70160011, 0x70162011, 0x00160411,
-                                                    0x0410F011, 0x02100011, 0xF0160011, 0x00107010);
-
-// 0xFFFF = -1, 0x0001 = 1
-constexpr __m256i negation_masks_epi16[2] = {
-    _mm256_set_epi16(0xFFFF, 0x0001, 0xFFFF, 0xFFFF, 0xFFFF, 0x0001, 0x0001, 0xFFFF, 0xFFFF, 0x0001,
-                     0xFFFF, 0x0001, 0xFFFF, 0xFFFF, 0x0001, 0xFFFF),
-    _mm256_set_epi16(0xFFFF, 0x0001, 0x0001, 0xFFFF, 0xFFFF, 0x0001, 0x0001, 0xFFFF, 0xFFFF, 0x0001,
-                     0xFFFF, 0x0001, 0xFFFF, 0xFFFF, 0x0001, 0xFFFF)};
-
-constexpr __m256i permutations_epi16[4] = {
-    _mm256_set_epi16(0x0F0E, 0x0706, 0x0100, 0x0908, 0x0B0A, 0x0D0C, 0x0504, 0x0302, 0x0706, 0x0F0E,
-                     0x0504, 0x0302, 0x0B0A, 0x0908, 0x0D0C, 0x0100),
-    _mm256_set_epi16(0x0D0C, 0x0504, 0x0302, 0x0B0A, 0x0F0E, 0x0908, 0x0706, 0x0100, 0x0B0A, 0x0908,
-                     0x0706, 0x0F0E, 0x0302, 0x0100, 0x0504, 0x0D0C),
-    _mm256_set_epi16(0x0D0C, 0x0B0A, 0x0706, 0x0100, 0x0F0E, 0x0908, 0x0504, 0x0302, 0x0B0A, 0x0908,
-                     0x0302, 0x0100, 0x0504, 0x0D0C, 0x0706, 0x0F0E),
-    _mm256_set_epi16(0x0D0C, 0x0F0E, 0x0908, 0x0706, 0x0100, 0x0504, 0x0302, 0x0B0A, 0x0302, 0x0100,
-                     0x0504, 0x0B0A, 0x0908, 0x0706, 0x0F0E, 0x0D0C)};
-
-constexpr __m256i tailmasks[16] = {
-    _mm256_set_epi16(0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF,
-                     0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF),
-    _mm256_set_epi16(0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-                     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xFFFF),
-    _mm256_set_epi16(0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-                     0x0000, 0x0000, 0x0000, 0x0000, 0xFFFF, 0xFFFF),
-    _mm256_set_epi16(0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-                     0x0000, 0x0000, 0x0000, 0xFFFF, 0xFFFF, 0xFFFF),
-    _mm256_set_epi16(0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-                     0x0000, 0x0000, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF),
-    _mm256_set_epi16(0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-                     0x0000, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF),
-    _mm256_set_epi16(0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-                     0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF),
-    _mm256_set_epi16(0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xFFFF,
-                     0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF),
-    _mm256_set_epi16(0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xFFFF, 0xFFFF,
-                     0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF),
-    _mm256_set_epi16(0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xFFFF, 0xFFFF, 0xFFFF,
-                     0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF),
-    _mm256_set_epi16(0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF,
-                     0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF),
-    _mm256_set_epi16(0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF,
-                     0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF),
-    _mm256_set_epi16(0x0000, 0x0000, 0x0000, 0x0000, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF,
-                     0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF),
-    _mm256_set_epi16(0x0000, 0x0000, 0x0000, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF,
-                     0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF),
-    _mm256_set_epi16(0x0000, 0x0000, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF,
-                     0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF),
-    _mm256_set_epi16(0x0000, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF,
-                     0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF)};
-#else
-// Now the ones we'll use if AVX2 isn't available.
 constexpr auto mixmask_threshold =
     build_vec16s(0x5555, 0x5555, 0x5555, 0x5555, 0x5555, 0x5555, 0x5555, 0x5555, 0xAAAA, 0xAAAA,
                  0xAAAA, 0xAAAA, 0xAAAA, 0xAAAA, 0xAAAA, 0xAAAA);
@@ -395,13 +241,11 @@ constexpr Vec16s tailmasks[16] = {
                  0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF),
     build_vec16s(0x0000, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF,
                  0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF)};
-#endif
 
-// Replacement functions for generic functionality.
 /**
    m256_storeu_si256. This function accepts a vector `b` and stores its entries in the passed array
-`a`. This function exaclty mimics the m256_storeu_si256 function. \param[in] a: the array to store
-in. \param[in] b: the vector that is being stored.
+   `a`. This function exaclty mimics the m256_storeu_si256 function. \param[in] a: the array to
+store in. \param[in] b: the vector that is being stored.
 **/
 inline void m256_storeu_si256(int16_t *a, const VecType b);
 
@@ -412,7 +256,7 @@ inline void m256_storeu_si256(int16_t *a, const VecType b);
    \param[in] a: the array to store.
    \return a vector containing the elements of `a`.
 **/
-inline Simd::VecType m256_loadu_si256(const int16_t *const a);
+inline VecType m256_loadu_si256(const int16_t *const a);
 
 /**
    m256_extract_epi64. This function accepts a vector `a` and extracts the 64-bit entry
@@ -424,11 +268,20 @@ inline Simd::VecType m256_loadu_si256(const int16_t *const a);
 template <int pos> inline int64_t m256_extract_epi64(const VecType a);
 
 /**
-   m128_set_epi64. This function creates a 128-bit vector with `e0` at position 0
-   and `e1` at position 1. This function exactly mimics the behaviour of _mm_set_epi64x.
-   \param[in] e1: the element to be placed at position 1.
-   \param[in] e0: the element to be placed at position 0.
-   \return a vector {e0, e1}.
+   m128_extract_epi64. This function accepts a vector `a` and extracts the 64-bit entry
+   held at position `pos`. This function exactly mimics the behaviour of _mm_extract_epi64.
+   \param[in] a: the vector to extract from.
+   \tparam[in] pos: the position to extract from.
+   \return a[pos];
+ **/
+template <int pos> inline int64_t m128_extract_epi64(const SmallVecType a);
+
+/**
+ m128_set_epi64. This function creates a 128-bit vector with `e0` at position 0
+ and `e1` at position 1. This function exactly mimics the behaviour of _mm_set_epi64x.
+ \param[in] e1: the element to be placed at position 1.
+ \param[in] e0: the element to be placed at position 0.
+ \return a vector {e0, e1}.
 **/
 inline SmallVecType m128_set_epi64x(const int64_t e1, const int64_t e0);
 /**
@@ -439,15 +292,6 @@ difference is that it works on unsigned ints. \param[in] e1: the element to be p
    \return a vector {e0, e1}.
 **/
 inline SmallVecType m128_set_epi64x(const uint64_t e1, const uint64_t e0);
-
-/**
-   m128_extract_epi64. This function accepts a vector `a` and extracts the 64-bit entry
-   held at position `pos`. This function exactly mimics the behaviour of _mm_extract_epi64.
-   \param[in] a: the vector to extract from.
-   \tparam[in] pos: the position to extract from.
-   \return a[pos];
- **/
-template <int pos> inline int64_t m128_extract_epi64(const SmallVecType a);
 
 /**
    m256_testz_si256. This function accepts two vectors `a` and `b` and computes their
@@ -495,6 +339,24 @@ inline VecType m256_cmpgt_epi16(const VecType a, const VecType b);
 inline VecType m256_slli_epi16(const VecType a, const int count);
 
 /**
+ * m128_slli_epi64. This function accepts a vector `a` and shifts each quadword in `a` left by
+ * `count` many bits. This function mimics exactly the behaviour of _mm_slli_epi64.
+ * \param[in] a: the vector to shift.
+ * \tparam[in] count: the amount to shift by.
+ * \return a << count.
+ */
+template <int pos> inline SmallVecType m128_slli_epi64(const SmallVecType a);
+
+/**
+ * m128_srli_epi64. This function accepts a vector `a` and shifts each quadword in `a` right by
+ * `count` many bits. This function mimics exactly the behaviour of _mm_srli_epi64.
+ * \param[in] a: the vector to shift.
+ * t\param[in] count: the amount to shift by.
+ * \return a >> count.
+ */
+template <int pos> inline SmallVecType m128_srli_epi64(const SmallVecType a);
+
+/**
  m256_hadd_epi16. Accepts two vectors `a` and `b` and emulates the _mm256i_hadd_epi16 instruction.
  This instruction pairwises adds the first 8 elements in `a` (i.e a[0] + a[1], a[2] + a[3], a[4] +
  a[5], a[6] + a[7]) and stores them in the first 64 bits of the output vector: the second 64 bits
@@ -532,41 +394,6 @@ then c[i] = a[i] - b[i]. \param[in] a: the left operand. \param[in] b: the right
 inline VecType m256_sub_epi16(const VecType a, const VecType b);
 
 /**
-   m256_xor_si256. This function accepts two vectors `a` and `b` and returns a vector containing
-   their bitwise xor. (i.e c[i] = a[i] ^ b[i] for 0 <= i < 255).
-   \param[in] a: the left operand.
-   \param[in] b: the right operand.
-   \return a ^ b.
-**/
-inline VecType m256_xor_si256(const VecType a, const VecType b);
-/**
-   m128_xor_si128. This function accepts two vectors `a` and `b` and returns a vector containing
-   their bitwise xor. (i.e c[i] = a[i] ^ b[i] for 0 <= i < 128).
-   \param[in] a: the left operand.
-   \param[in] b: the right operand.
-   \return a ^ b.
-**/
-inline SmallVecType m128_xor_si128(const SmallVecType a, const SmallVecType b);
-
-/**
- * m128_slli_epi64. This function accepts a vector `a` and shifts each quadword in `a` left by
- * `count` many bits. This function mimics exactly the behaviour of _mm_slli_epi64.
- * \param[in] a: the vector to shift.
- * \tparam[in] count: the amount to shift by.
- * \return a << count.
- */
-template <int pos> inline SmallVecType m128_slli_epi64(const SmallVecType a);
-
-/**
- * m128_srli_epi64. This function accepts a vector `a` and shifts each quadword in `a` right by
- * `count` many bits. This function mimics exactly the behaviour of _mm_srli_epi64.
- * \param[in] a: the vector to shift.
- * t\param[in] count: the amount to shift by.
- * \return a >> count.
- */
-template <int pos> inline SmallVecType m128_srli_epi64(const SmallVecType a);
-
-/**
  m256_and_si256. This function accepts two vectors `a` and `b` and returns a vector containing
  their bitwise and. (i.e c[i] = a[i] & b[i] for 0 <= i < 255).
  \param[in] a: the left operand.
@@ -575,10 +402,23 @@ template <int pos> inline SmallVecType m128_srli_epi64(const SmallVecType a);
 **/
 inline VecType m256_and_si256(const VecType a, const VecType b);
 
-// WARNING: the following function is ever so slightly different from the intel intrinsic:
-// technically for the GCC version the `mask` can be a runtime variable. This is not true for the
-// intel version: there the mask needs to be known at compile-time. To get around this limitation,
-// the following function is a template.
+/**
+   m256_xor_si256. This function accepts two vectors `a` and `b` and returns a vector containing
+   their bitwise xor. (i.e c[i] = a[i] ^ b[i] for 0 <= i < 255).
+   \param[in] a: the left operand.
+   \param[in] b: the right operand.
+   \return a ^ b.
+**/
+inline VecType m256_xor_si256(const VecType a, const VecType b);
+
+/**
+   m128_xor_si128. This function accepts two vectors `a` and `b` and returns a vector containing
+   their bitwise xor. (i.e c[i] = a[i] ^ b[i] for 0 <= i < 128).
+   \param[in] a: the left operand.
+   \param[in] b: the right operand.
+   \return a ^ b.
+**/
+inline SmallVecType m128_xor_si128(const SmallVecType a, const SmallVecType b);
 
 /**
    m256_permute4x64_epi64. This function accepts a vector `a`, a compile-time known 8-bit int `mask`
@@ -625,11 +465,11 @@ inline VecType m256_sign_epi16(const VecType a, const VecType mask);
 inline VecType m256_sign_epi16_ternary(const VecType a, const VecType mask);
 
 /**
-   m256_broadcast_si128_si256. This function double packs a 128-bit vector into a 256-bit vector.
-   In other words, this function produces `out` where out[0:7] == in and out[8:15] == in;
-   This function mimics the _mm256_broadcastsi128_si256 function.
-   \param[in] in: the vector to broadcast.
-   \return a double-packed version of `in`.
+ m256_broadcast_si128_si256. This function double packs a 128-bit vector into a 256-bit vector.
+ In other words, this function produces `out` where out[0:7] == in and out[8:15] == in;
+ This function mimics the _mm256_broadcastsi128_si256 function.
+ \param[in] in: the vector to broadcast.
+ \return a double-packed version of `in`.
 **/
 inline VecType m256_broadcastsi128_si256(const SmallVecType in);
 
@@ -656,7 +496,7 @@ inline VecType m256_broadcastsi128_si256(const SmallVecType in);
 inline VecType m256_shuffle_epi8(const VecType in, const VecType mask);
 
 /**
- * m128_shuffle_epi8.
+ * m128_shuffle_epi.
  * This function accepts two vectors, `in` and `mask`.
  * This function shuffles the bytes in
  * `in` according to the `mask` and returns the result, denoted as c.
@@ -668,8 +508,6 @@ inline VecType m256_shuffle_epi8(const VecType in, const VecType mask);
  */
 inline SmallVecType m128_shuffle_epi8(const SmallVecType in, const SmallVecType mask);
 
-// Generic functionality: parts of FastHadamardLSH were moved here.
-
 /**
    m256_hadamard16_epi16. This function computes the hadamard transform of `x1` and stores the
 result in `r1`. This function does not directly mimick an existing Intel Intrinsic: instead, it
@@ -677,17 +515,6 @@ simply moves the functionality from FastHadamardLSH to this namespace. \param[in
 be transformed. \param[out] r1: the location of the result.
 **/
 inline void m256_hadamard16_epi16(const VecType x1, VecType &r1);
-
-/**
-   m256_hadamard32_epi16. This function computes the hadamard transform of `x1` and `x2`, storing
-   the result in `r1` and `r2` respectively. This function is essentially the same as above, with
-   this function provided essentially for better speed.
-   \param[in] x1: the first vector to be transformed.
-   \param[in] x2: the second vector to be transformed.
-   \param[out] r1: the location of H(x1).
-   \param[out] r2: the location of H(x2).
-**/
-inline void m256_hadamard32_epi16(const VecType x1, const VecType x2, VecType &r1, VecType &r2);
 
 /**
    m256_mix. This function swaps v0[i] and v1[i] iff mask[i] for 0 <= i < 255.
@@ -720,6 +547,7 @@ inline void m256_mix(VecType &v0, VecType &v1, const VecType &mask);
  */
 inline SmallVecType m128_random_state(SmallVecType prg_state, SmallVecType key,
                                       SmallVecType *extra_state);
+
 /**
  * m256_permute_epi16. The goal of this function is to permute the input vector v,
  * according to the randomness from prg_state & the tailmask.  Note that this function is a
@@ -733,9 +561,8 @@ template <int regs_>
 inline void m256_permute_epi16(VecType *const v, SmallVecType &prg_state, const VecType tailmask,
                                const SmallVecType &key, SmallVecType *extra_state);
 
-}  // namespace Simd
+};  // namespace SimdGeneric
 
 // Inline definitions are in this file.
-#include "simd.inl"
-
+#include "simd_generic.inl"
 #endif
