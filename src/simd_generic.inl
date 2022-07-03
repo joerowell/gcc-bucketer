@@ -45,8 +45,8 @@ inline SimdGeneric::SmallVecType SimdGeneric::m128_set_epi64x(const int64_t e1, 
 inline SimdGeneric::SmallVecType SimdGeneric::m128_set_epi64x(const uint64_t e1, const uint64_t e0)
 {
   SimdGeneric::SmallVecType a;
-  memcpy(&a, &e1, sizeof(e1));
-  memcpy(&a[4], &e0, sizeof(e0));
+  memcpy(&a, &e0, sizeof(e0));
+  memcpy(&a[4], &e1, sizeof(e1));
   return a;
 }
 
@@ -240,8 +240,8 @@ inline SimdGeneric::VecType
 SimdGeneric::m256_broadcastsi128_si256(const SimdGeneric::SmallVecType in)
 {
   SimdGeneric::VecType a;
-  memcpy(&a[0], &in, sizeof(in));
-  memcpy(&a[8], &in, sizeof(in));
+  memcpy(&a[0], &in[0], sizeof(in));
+  memcpy(&a[8], &in[0], sizeof(in));
   return a;
 }
 
@@ -453,4 +453,35 @@ inline SimdGeneric::SmallVecType SimdGeneric::m128_srli_epi64(const SmallVecType
   SmallVecType out;
   memcpy(&out, &a_as_arr, sizeof(a_as_arr));
   return out;
+}
+
+inline void SimdGeneric::m256_hadamard32_epi16(const VecType x1, const VecType x2, VecType &r1,
+                                               VecType &r2)
+{
+  auto a1 = m256_permute4x64_epi64_for_hadamard(x1);
+  auto a2 = m256_permute4x64_epi64_for_hadamard(x2);
+
+  auto t1 = m256_sign_epi16(x1, sign_mask_8);
+  auto t2 = m256_sign_epi16(x2, sign_mask_8);
+
+  a1 = m256_add_epi16(a1, t1);
+  a2 = m256_add_epi16(a2, t2);
+
+  auto b1 = m256_sign_epi16(a1, sign_mask_2);
+  auto b2 = m256_sign_epi16(a2, sign_mask_2);
+
+  // Now apply the 16-bit Hadamard transforms and repeat the process
+  a1 = m256_hadd_epi16(a1, b1);
+  a2 = m256_hadd_epi16(a2, b2);
+  b1 = m256_sign_epi16(a1, sign_mask_2);
+  b2 = m256_sign_epi16(a2, sign_mask_2);
+  a1 = m256_hadd_epi16(a1, b1);
+  a2 = m256_hadd_epi16(a2, b2);
+  b1 = m256_sign_epi16(a1, sign_mask_2);
+  b2 = m256_sign_epi16(a2, sign_mask_2);
+  a1 = m256_hadd_epi16(a1, b1);
+  a2 = m256_hadd_epi16(a2, b2);
+
+  r1 = m256_add_epi16(a1, a2);
+  r2 = m256_sub_epi16(a1, a2);
 }

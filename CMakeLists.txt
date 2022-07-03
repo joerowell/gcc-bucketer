@@ -69,6 +69,8 @@ list(JOIN COVERAGE " " COVERAGE)
 # Global settings for great good The definition for G_C_FLAGS expands the
 # warnings and coverage arguments from above.
 
+set(G_C_NO_AVX2 "-g3 -flax-vector-conversions" "${G_C_NO_AVX2}" "${WARNINGS}" "${LIB_ASAN}" "${COVERAGE}")
+
 set(G_C_FLAGS "-g3 -march=native -flax-vector-conversions " "${G_C_FLAGS}" "${WARNINGS}" "${LIB_ASAN}" "${COVERAGE}")
 set(G_L_FLAGS "gtest gtest_main" "${LIB_ASAN}")
 set(G_C_OPT_FLAGS "-Ofast -march=native -mtune=native -flto -ftree-vectorize")
@@ -76,6 +78,7 @@ set(G_C_OPT_FLAGS "-Ofast -march=native -mtune=native -flto -ftree-vectorize")
 # This splits them up into a form that CMAKE can deal with when passing to
 # executables
 separate_arguments(C_FLAGS UNIX_COMMAND "${G_C_FLAGS}")
+separate_arguments(C_NO_AVX2_FLAGS UNIX_COMMAND "${G_C_NO_AVX2}")
 separate_arguments(L_FLAGS UNIX_COMMAND "${G_L_FLAGS}")
 
 add_executable(SimdGCCTests src/simd_gcc.t.cpp src/simd.cpp src/fht_lsh_old.cpp)
@@ -84,18 +87,17 @@ target_link_libraries(SimdGCCTests PRIVATE ${L_FLAGS})
 set_target_properties(SimdGCCTests PROPERTIES CXX_STANDARD 17)
 add_test(SimdGCCTests SimdGCCTests)
 
-add_executable(SimdIntelTests src/simd_intel.t.cpp src/simd.cpp src/fht_lsh_old.cpp)
+add_executable(SimdIntelTests src/simd_intel.t.cpp src/simd.cpp src/simd_intel.cpp src/fht_lsh_old.cpp)
 target_compile_options(SimdIntelTests PRIVATE ${C_FLAGS})
 target_link_libraries(SimdIntelTests PRIVATE ${L_FLAGS})
 set_target_properties(SimdIntelTests PROPERTIES CXX_STANDARD 17)
 add_test(SimdIntelTests SimdIntelTests)
 
-add_executable(SimdGenericTests src/simd_generic.t.cpp src/simd_generic.cpp)
-target_compile_options(SimdGenericTests PRIVATE ${C_FLAGS})
-target_link_libraries(SimdGenericTests PRIVATE ${L_FLAGS})
-set_target_properties(SimdGenericTests PROPERTIES CXX_STANDARD 17)
-add_test(SimdGenericTests SimdGenericTests)
-
+add_executable(SimdIntelNoAVX2Tests src/simd_intel.t.cpp src/simd.cpp)
+target_compile_options(SimdIntelNoAVX2Tests PRIVATE ${C_NO_AVX2_FLAGS})
+target_link_libraries(SimdIntelNoAVX2Tests PRIVATE ${L_FLAGS})
+set_target_properties(SimdIntelNoAVX2Tests PROPERTIES CXX_STANDARD 17)
+add_test(SimdIntelNoAVX2Tests SimdIntelNoAVX2Tests)
 
 # ##############################################################################
 # Benchmarking
