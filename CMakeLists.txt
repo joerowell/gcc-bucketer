@@ -24,7 +24,8 @@ include_directories(SYSTEM ${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 # Unit Tests
 # ##############################################################################
 
-set(LIB_ASAN -fno-omit-frame-pointer -fsanitize=address)
+set(LIB_ASAN)
+
 #Tsan)
 
 # Reason for placing these here: easier removal from the flags if you can just
@@ -81,13 +82,13 @@ separate_arguments(C_FLAGS UNIX_COMMAND "${G_C_FLAGS}")
 separate_arguments(C_NO_AVX2_FLAGS UNIX_COMMAND "${G_C_NO_AVX2}")
 separate_arguments(L_FLAGS UNIX_COMMAND "${G_L_FLAGS}")
 
-add_executable(SimdGCCTests src/simd_gcc.t.cpp src/simd.cpp src/fht_lsh_old.cpp)
+add_executable(SimdGCCTests src/simd_gcc.t.cpp src/simd.cpp)
 target_compile_options(SimdGCCTests PRIVATE ${C_FLAGS})
 target_link_libraries(SimdGCCTests PRIVATE ${L_FLAGS})
 set_target_properties(SimdGCCTests PROPERTIES CXX_STANDARD 17)
 add_test(SimdGCCTests SimdGCCTests)
 
-add_executable(SimdIntelTests src/simd_intel.t.cpp src/simd.cpp src/simd_intel.cpp src/fht_lsh_old.cpp)
+add_executable(SimdIntelTests src/simd_intel.t.cpp src/simd.cpp)
 target_compile_options(SimdIntelTests PRIVATE ${C_FLAGS})
 target_link_libraries(SimdIntelTests PRIVATE ${L_FLAGS})
 set_target_properties(SimdIntelTests PROPERTIES CXX_STANDARD 17)

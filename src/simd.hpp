@@ -2,9 +2,13 @@
 #define G6K_SIMD_H
 
 #include <cstdint>
+#ifdef HAVE_AVX2
 #include <immintrin.h>
+#endif
 #include <iostream>
 
+// This namespace exists to circumvent an issue with the Intel intrinsics.
+// See the README for more.
 namespace SimdInnerTypes
 {
 /**
@@ -254,7 +258,7 @@ struct Simd
   // Masks for various operations.
   // We only compile the ones we'll use.
 
-#ifdef COMPILE_AVX2
+#ifdef HAVE_AVX2
   static constexpr __m256i mixmask_threshold =
       _mm256_set_epi16(0x5555, 0x5555, 0x5555, 0x5555, 0x5555, 0x5555, 0x5555, 0x5555, 0xAAAA,
                        0xAAAA, 0xAAAA, 0xAAAA, 0xAAAA, 0xAAAA, 0xAAAA, 0xAAAA);
