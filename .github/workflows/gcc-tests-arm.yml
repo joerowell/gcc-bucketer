@@ -1,4 +1,4 @@
-name: Tests
+name: gcc-tests-arm
 on:
   push:
     branches: [ main ]
@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - uses: pguyot/arm-runner-action@v2
     - name: run Tests
       run: | 
           git clone https://github.com/google/googletest 

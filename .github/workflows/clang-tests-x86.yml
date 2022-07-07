@@ -1,4 +1,4 @@
-name: clang-tests
+name: clang-tests-x86
 on:
   push:
     branches: [ main ]
